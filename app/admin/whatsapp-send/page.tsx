@@ -850,7 +850,6 @@ export function WhatsAppSendContent({
                   إرسال عبر الواتس
                 </h1>
               </div>
-              {displayMode !== "inline" ? (
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
                 {!isRepliesView ? (
                   <Popover>
@@ -919,7 +918,6 @@ export function WhatsAppSendContent({
                   {isRepliesView ? "عرض الإرسال" : "عرض الردود"}
                 </Button>
               </div>
-              ) : null}
             </div>
 
             {isRepliesView ? (
@@ -1076,9 +1074,9 @@ export function WhatsAppSendContent({
                       </Button>
                     </div>
 
-                    <div className="flex flex-col gap-3 rounded-2xl border border-[#3453a7]/15 bg-[#f8fbff] p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-4 text-sm">
                       {sendResults ? (
-                        <div className="flex flex-wrap items-center gap-4 text-sm">
+                        <>
                           <div className="flex items-center gap-2 text-green-600">
                             <CheckCircle2 className="w-4 h-4" />
                             <span>تم الإرسال {sendResults.sent}</span>
@@ -1087,17 +1085,8 @@ export function WhatsAppSendContent({
                             <CircleAlert className="w-4 h-4" />
                             <span>قيد الانتظار {sendResults.pending}</span>
                           </div>
-                        </div>
-                      ) : <div />}
-
-                      <Button
-                        onClick={handleSendMessages}
-                        disabled={isSending || isWhatsAppStatusLoading || selectedRecipients.length === 0 || (!message.trim() && !imagePayload)}
-                        variant="outline"
-                        className="w-full text-sm h-9 rounded-lg border-[#3453a7]/50 bg-[linear-gradient(135deg,#24428f_0%,#3453a7_55%,#4f73d1_100%)] !text-white hover:brightness-105 hover:!text-white focus-visible:!text-white active:!text-white disabled:!text-white disabled:opacity-60 sm:w-auto sm:min-w-[160px]"
-                      >
-                        {isSending ? "جاري الإرسال" : <><Send className="w-4 h-4 ml-2" />إرسال</>}
-                      </Button>
+                        </>
+                      ) : null}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-[220px_220px_minmax(0,1fr)_auto] gap-3">
@@ -1171,6 +1160,15 @@ export function WhatsAppSendContent({
                         ))
                       )}
                     </div>
+
+                    <Button
+                      onClick={handleSendMessages}
+                      disabled={isSending || isWhatsAppStatusLoading || selectedRecipients.length === 0 || (!message.trim() && !imagePayload)}
+                      variant="outline"
+                      className="w-full text-sm h-9 rounded-lg border-[#3453a7]/50 bg-[linear-gradient(135deg,#24428f_0%,#3453a7_55%,#4f73d1_100%)] !text-white hover:brightness-105 hover:!text-white focus-visible:!text-white active:!text-white disabled:!text-white disabled:opacity-60"
+                    >
+                      {isSending ? "جاري الإرسال" : <><Send className="w-4 h-4 ml-2" />إرسال</>}
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
