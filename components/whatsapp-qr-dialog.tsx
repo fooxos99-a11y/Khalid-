@@ -392,7 +392,7 @@ export function WhatsAppQrDialog({ open, onOpenChange, initialStatus }: WhatsApp
       }))
 
       await alertDialog("تم إرسال طلب إلغاء الربط. حدّث الباركود بعد لحظات لعرض الكود الجديد.", "تم")
-      await fetchStatus()
+      onOpenChange(false)
     } catch (error) {
       await alertDialog(error instanceof Error ? error.message : "تعذر إلغاء الربط حالياً", "خطأ")
     } finally {
