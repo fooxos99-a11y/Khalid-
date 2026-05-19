@@ -1116,9 +1116,35 @@ export default function AdminDashboardPage() {
           <div className="w-full">
             <div className="mb-6 rounded-[2rem] border border-white/70 bg-white/90 px-4 py-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:px-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="text-right lg:shrink-0">
-                  <p className="text-xs font-medium text-[#6d7f90]">مرحبًا</p>
-                  <p className="text-sm font-bold text-[#10263c]">{userName}</p>
+                <div className="flex items-start justify-between gap-3 md:block lg:shrink-0">
+                  <div className="text-right">
+                    <p className="text-xs font-medium text-[#6d7f90]">مرحبًا</p>
+                    <p className="text-sm font-bold text-[#10263c]">{userName}</p>
+                  </div>
+                  <div className="flex items-center gap-2 md:hidden">
+                    {canViewWhatsAppQueue ? (
+                      <WhatsAppQueueIndicator
+                        enabled={canViewWhatsAppQueue}
+                        buttonClassName={dashboardSquareOutlineButtonClass}
+                        iconClassName="text-[var(--button-outline-text)]"
+                      />
+                    ) : null}
+                    {canOpenWhatsAppQr ? (
+                      <button
+                        type="button"
+                        onClick={() => void openWhatsAppEntryPoint()}
+                        className={dashboardSquareOutlineButtonClass}
+                        aria-label="باركود الواتساب"
+                      >
+                        <QrCode className="h-5 w-5" />
+                        {whatsAppNeedsAttention ? (
+                          <span className="absolute -top-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#fff7ed] text-[11px] font-black text-[#f97316] shadow-[0_0_0_4px_rgba(249,115,22,0.12)]">
+                            !
+                          </span>
+                        ) : null}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
 
                 {activeInlinePage === "teacher-attendance" ? (
@@ -1165,7 +1191,7 @@ export default function AdminDashboardPage() {
                   </div>
                 ) : null}
 
-                <div className="flex items-center justify-end gap-3">
+                <div className="flex flex-wrap items-center justify-end gap-3">
                   {activeInlinePage === "teachers" ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -1467,7 +1493,7 @@ export default function AdminDashboardPage() {
                   {canViewWhatsAppQueue ? (
                     <WhatsAppQueueIndicator
                       enabled={canViewWhatsAppQueue}
-                      buttonClassName={dashboardSquareOutlineButtonClass}
+                      buttonClassName={`${dashboardSquareOutlineButtonClass} hidden md:flex`}
                       iconClassName="text-[var(--button-outline-text)]"
                     />
                   ) : null}
@@ -1475,7 +1501,7 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => void openWhatsAppEntryPoint()}
-                      className={dashboardSquareOutlineButtonClass}
+                      className={`${dashboardSquareOutlineButtonClass} hidden md:flex`}
                       aria-label="باركود الواتساب"
                     >
                       <QrCode className="h-5 w-5" />

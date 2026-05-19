@@ -1394,6 +1394,22 @@ export function Header() {
         </div>
         ) : null}
         <div className="container mx-auto flex h-20 items-center justify-between gap-4 px-4">
+            <button
+              type="button"
+              onClick={goToHome}
+              className="site-header-brand relative z-20 inline-flex min-w-0 items-center justify-end md:hidden"
+              aria-label="العودة إلى الرئيسية"
+            >
+              <Image
+                src="/%D8%B4%D8%B9%D8%A7%D8%B1-%D8%A7%D9%84%D8%AC%D9%85%D8%B9%D9%8A%D8%A9.png"
+                alt="شعار الجمعية"
+                width={42}
+                height={42}
+                className="site-header-brand-logo h-9 w-9 object-contain"
+                priority
+              />
+            </button>
+
           <button
             type="button"
             onClick={goToHome}
@@ -1479,7 +1495,15 @@ export function Header() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="order-first flex items-center gap-2 md:order-none">
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="site-header-mobile-button inline-flex h-11 w-11 items-center justify-center rounded-full md:hidden"
+              aria-label="فتح القائمة"
+            >
+              <Menu size={22} />
+            </button>
             {authResolved && isLoggedIn ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
