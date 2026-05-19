@@ -420,6 +420,8 @@ export function Header() {
   const [isStaffProfileLoading, setIsStaffProfileLoading] = useState(false);
   const [staffProfileData, setStaffProfileData] = useState<StaffProfileData | null>(null);
   const [hasActiveSemester, setHasActiveSemester] = useState<boolean | null>(null);
+  const [isMobileHeaderLinksOpen, setIsMobileHeaderLinksOpen] = useState(false);
+  const [isPortraitMobile, setIsPortraitMobile] = useState(false);
 
   const canUseDirectNotificationQueries = userRole === "student";
 
@@ -469,6 +471,32 @@ export function Header() {
       setIsLoginDialogOpen(true);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 767px) and (orientation: portrait)");
+
+    const syncPortraitMobileState = () => {
+      const nextIsPortraitMobile = mediaQuery.matches;
+      setIsPortraitMobile(nextIsPortraitMobile);
+      if (!nextIsPortraitMobile) {
+        setIsMobileHeaderLinksOpen(false);
+      }
+    };
+
+    syncPortraitMobileState();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", syncPortraitMobileState);
+      return () => mediaQuery.removeEventListener("change", syncPortraitMobileState);
+    }
+
+    mediaQuery.addListener(syncPortraitMobileState);
+    return () => mediaQuery.removeListener(syncPortraitMobileState);
+  }, []);
 
   const fetchNotificationStartAt = async (accountNumber: string) => {
     if (!canUseDirectNotificationQueries) {
@@ -1208,6 +1236,7 @@ export function Header() {
 
   const handleNav = (href: string) => {
     setIsMobileMenuOpen(false);
+    setIsMobileHeaderLinksOpen(false);
     scrollToTop();
 
     if (href.startsWith('?')) {
@@ -1248,6 +1277,7 @@ export function Header() {
 
   const handleHeaderLinkClick = (target: string) => {
     setIsMobileMenuOpen(false);
+    setIsMobileHeaderLinksOpen(false);
 
     if (!target.startsWith("#")) {
       handleNav(target);
@@ -1496,6 +1526,16 @@ export function Header() {
           </div>
 
           <div className="order-first flex items-center gap-2 md:order-none">
+            {isPortraitMobile ? (
+              <button
+                type="button"
+                onClick={() => setIsMobileHeaderLinksOpen((current) => !current)}
+                className="site-header-mobile-button inline-flex h-11 w-11 items-center justify-center rounded-full md:hidden"
+                aria-label="روابط الهيدر"
+              >
+                <Menu size={22} />
+              </button>
+            ) : null}
             {authResolved && isLoggedIn ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -1600,6 +1640,54 @@ export function Header() {
             ) : null}
           </div>
         </div>
+        {isPortraitMobile ? (
+          <>
+            <div
+              className={`fixed inset-0 z-[55] bg-black/25 transition-opacity duration-200 md:hidden ${isMobileHeaderLinksOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
+              onClick={() => setIsMobileHeaderLinksOpen(false)}
+            />
+            <div
+              dir="rtl"
+              className={`fixed left-4 right-4 top-[5.5rem] z-[60] rounded-[28px] border border-[#d9e4fb] bg-white/95 p-3 shadow-[0_24px_55px_rgba(15,23,42,0.18)] backdrop-blur-xl transition-all duration-200 md:hidden ${isMobileHeaderLinksOpen ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0"}`}
+            >
+              <div className="grid gap-2">
+                {HEADER_LINKS.map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => handleHeaderLinkClick(item.target)}
+                    className="flex items-center justify-between rounded-2xl border border-[#e3ebfb] bg-white px-4 py-3 text-right text-sm font-bold text-[#1a2332] transition-colors hover:bg-[#f8fbff]"
+                  >
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+                {isLoggedIn && (userRole === "teacher" || userRole === "deputy_teacher" || isAdmin) ? (
+                  <button
+                    type="button"
+                    onClick={() => handleNav("/competitions")}
+                    className="flex items-center justify-between rounded-2xl border border-[#e3ebfb] bg-white px-4 py-3 text-right text-sm font-bold text-[#1a2332] transition-colors hover:bg-[#f8fbff]"
+                  >
+                    <span>المسابقات</span>
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => handleNav("/students/all")}
+                  className="flex items-center justify-between rounded-2xl border border-[#e3ebfb] bg-white px-4 py-3 text-right text-sm font-bold text-[#1a2332] transition-colors hover:bg-[#f8fbff]"
+                >
+                  <span>أفضل الطلاب</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleHeaderLinkClick("#contact")}
+                  className="flex items-center justify-between rounded-2xl border border-[#e3ebfb] bg-white px-4 py-3 text-right text-sm font-bold text-[#1a2332] transition-colors hover:bg-[#f8fbff]"
+                >
+                  <span>تواصل معنا</span>
+                </button>
+              </div>
+            </div>
+          </>
+        ) : null}
         <GlobalAddStudentDialog />
     </header>
 
