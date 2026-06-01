@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server"
 const ALMOSALY_BASE_URL = "https://almosaly.com"
 const BURAIDAH_CITY_ID = "14"
 const BURAIDAH_CITY_NAME = "بريدة"
+const TEACHER_ATTENDANCE_CITY_NAME = "القصيم"
+const TEACHER_ATTENDANCE_CITY_ALIASES = [TEACHER_ATTENDANCE_CITY_NAME, BURAIDAH_CITY_NAME]
 const BURAIDAH_LATITUDE = "26.35"
 const BURAIDAH_LONGITUDE = "43.96"
 const RIYADH_TIMEZONE = "Asia/Riyadh"
@@ -100,17 +102,23 @@ async function getStoredBuraidahAsrTime(attendanceDate: string) {
 		const supabase = await createClient()
 		const { data, error } = await supabase
 			.from(DAILY_PRAYER_TIMES_TABLE)
-			.select("prayer_time")
+			.select("city_name, prayer_time")
 			.eq("prayer_date", attendanceDate)
-			.eq("city_name", BURAIDAH_CITY_NAME)
+			.in("city_name", TEACHER_ATTENDANCE_CITY_ALIASES)
 			.eq("prayer_name", ASR_PRAYER_NAME)
-			.maybeSingle()
 
-		if (error || typeof data?.prayer_time !== "string" || !isValidAsrTime(data.prayer_time)) {
+		if (error || !Array.isArray(data) || data.length === 0) {
 			return null
 		}
 
-		return data.prayer_time
+		for (const cityName of TEACHER_ATTENDANCE_CITY_ALIASES) {
+			const matchingRecord = data.find((item) => item?.city_name === cityName)
+			if (typeof matchingRecord?.prayer_time === "string" && isValidAsrTime(matchingRecord.prayer_time)) {
+				return matchingRecord.prayer_time
+			}
+		}
+
+		return null
 	} catch {
 		return null
 	}
@@ -123,7 +131,7 @@ async function storeBuraidahAsrTime(attendanceDate: string, prayerTime: string) 
 			{
 				prayer_date: attendanceDate,
 				city_id: BURAIDAH_CITY_ID,
-				city_name: BURAIDAH_CITY_NAME,
+				city_name: TEACHER_ATTENDANCE_CITY_NAME,
 				prayer_name: ASR_PRAYER_NAME,
 				prayer_time: prayerTime,
 				source: "Almosaly",
@@ -226,7 +234,7 @@ export async function getTeacherAttendanceTimingStatus(
 			isOnTime: null,
 			timingCategory: null,
 			lateMinutes: null,
-			city: BURAIDAH_CITY_NAME,
+			city: TEACHER_ATTENDANCE_CITY_NAME,
 			graceMinutes,
 			source: "Almosaly",
 		} satisfies TeacherAttendanceTimingStatus
@@ -249,7 +257,7 @@ export async function getTeacherAttendanceTimingStatus(
 		isOnTime,
 		timingCategory: lateMinutes > 0 ? "late" : isEarly ? "early" : "on-time",
 		lateMinutes,
-		city: BURAIDAH_CITY_NAME,
+		city: TEACHER_ATTENDANCE_CITY_NAME,
 		graceMinutes,
 		source: "Almosaly",
 	} satisfies TeacherAttendanceTimingStatus

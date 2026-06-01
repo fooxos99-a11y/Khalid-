@@ -90,6 +90,7 @@ interface Circle {
 const CIRCLES_CACHE_DURATION = 5 * 60 * 1000;
 const HEADER_RANK_CACHE_DURATION = 2 * 60 * 1000;
 const HEADER_STATS_CACHE_DURATION = 2 * 60 * 1000;
+const HEADER_STUDENT_SUMMARY_CACHE_DURATION = 2 * 60 * 1000;
 const TEACHER_INFO_CACHE_DURATION = 5 * 60 * 1000;
 const NOTIFICATION_START_AT_CACHE_DURATION = 10 * 60 * 1000;
 const HEADER_LINKS = [
@@ -352,6 +353,12 @@ type TeacherHeaderInfo = {
   halaqah?: string | null;
 };
 
+type StudentHeaderSummary = {
+  id: string;
+  accountNumber: number;
+  points: number;
+};
+
 export function Header() {
   const [globalRank, setGlobalRank] = useState<string | number | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -422,6 +429,7 @@ export function Header() {
   const [hasActiveSemester, setHasActiveSemester] = useState<boolean | null>(null);
   const [isMobileHeaderLinksOpen, setIsMobileHeaderLinksOpen] = useState(false);
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
+  const studentHeaderSummaryRequestsRef = useRef(new globalThis.Map<string, Promise<StudentHeaderSummary | null>>());
 
   const canUseDirectNotificationQueries = userRole === "student";
 
@@ -581,6 +589,51 @@ export function Header() {
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "instant" });
 
+  const getStudentHeaderSummaryCacheKey = (accNum: string) => `studentHeaderSummary_${accNum}`;
+
+  const fetchStudentHeaderSummary = async (accNum: string) => {
+    const cachedStudent = readCachedJson<StudentHeaderSummary>(
+      getStudentHeaderSummaryCacheKey(accNum),
+      HEADER_STUDENT_SUMMARY_CACHE_DURATION,
+    );
+
+    if (cachedStudent) {
+      return cachedStudent;
+    }
+
+    const pendingRequest = studentHeaderSummaryRequestsRef.current.get(accNum);
+    if (pendingRequest) {
+      return pendingRequest;
+    }
+
+    const requestPromise = (async () => {
+      const response = await fetch(`/api/students?account_number=${accNum}`);
+      const data = await response.json();
+      const student = (data.students || [])[0];
+
+      if (!student?.id) {
+        return null;
+      }
+
+      const nextStudentSummary = {
+        id: String(student.id),
+        accountNumber: Number(student.account_number || accNum),
+        points: Number(student.points) || 0,
+      } satisfies StudentHeaderSummary;
+
+      writeCachedJson(getStudentHeaderSummaryCacheKey(accNum), nextStudentSummary);
+      return nextStudentSummary;
+    })();
+
+    studentHeaderSummaryRequestsRef.current.set(accNum, requestPromise);
+
+    try {
+      return await requestPromise;
+    } finally {
+      studentHeaderSummaryRequestsRef.current.delete(accNum);
+    }
+  };
+
   const syncDailyChallengePlayedStatus = () => {
     const accNumStr = localStorage.getItem("accountNumber");
     if (!accNumStr) {
@@ -615,11 +668,8 @@ export function Header() {
           }
           if (accNum && role === "student") {
             try {
-              // جلب بيانات الطالب للحصول على studentId
-              const resStudents = await fetch(`/api/students?account_number=${accNum}`);
-              const dataStudents = await resStudents.json();
-              const student = (dataStudents.students || []).find((s:any) => String(s.account_number) === String(accNum));
-              if (student && student.id) {
+              const student = await fetchStudentHeaderSummary(accNum);
+              if (student?.id) {
                 const resRank = await fetch(`/api/student-ranking?student_id=${student.id}`);
                 const dataRank = await resRank.json();
                 if (dataRank.success && dataRank.ranking && dataRank.ranking.globalRank) {
@@ -718,7 +768,6 @@ export function Header() {
           setSidebarStudentPoints(cachedStats.sidebarStudentPoints ?? 0);
           setSidebarPlanName(cachedStats.sidebarPlanName ?? null);
           setIsSidebarStudentStatsLoading(false);
-          fetchSidebarPlan(accNum);
         } else {
           fetchSidebarPlan(accNum);
         }
@@ -943,9 +992,7 @@ export function Header() {
 
   const fetchSidebarPlan = async (accNum: string) => {
     try {
-      const res = await fetch(`/api/students?account_number=${accNum}`);
-      const data = await res.json();
-      const student = (data.students || [])[0];
+      const student = await fetchStudentHeaderSummary(accNum);
       if (!student) {
         setSidebarPlanProgress(0);
         setSidebarQuranProgress(0);
@@ -961,7 +1008,7 @@ export function Header() {
         });
         return;
       }
-      setSidebarStudentPoints(Number(student.points) || 0);
+      setSidebarStudentPoints(student.points);
       const planRes = await fetch(`/api/student-plans?student_id=${student.id}`);
       const planData = await planRes.json();
       if (planData.plan) {
@@ -973,7 +1020,7 @@ export function Header() {
           sidebarPlanProgress: planData.progressPercent ?? 0,
           sidebarQuranProgress: planData.quranProgressPercent ?? 0,
           sidebarQuranLevel: planData.quranLevel ?? 0,
-          sidebarStudentPoints: Number(student.points) || 0,
+          sidebarStudentPoints: student.points,
           sidebarPlanName: `${planData.plan.start_surah_name} ← ${planData.plan.end_surah_name}`,
         });
       } else {
@@ -988,7 +1035,7 @@ export function Header() {
           sidebarPlanProgress: 0,
           sidebarQuranProgress: quranProgress,
           sidebarQuranLevel: quranLevel,
-          sidebarStudentPoints: Number(student.points) || 0,
+          sidebarStudentPoints: student.points,
           sidebarPlanName: null,
         });
       }

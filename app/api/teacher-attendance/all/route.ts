@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
             isOnTime: null,
             timingCategory: null,
             lateMinutes: null,
-            city: "بريدة",
+            city: "القصيم",
             graceMinutes,
             source: "Almosaly",
           }
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       records: recordsWithTiming,
       meta: {
-        city: "بريدة",
+        city: "القصيم",
         graceMinutes,
         todayAsrTime,
         todayDate: saudiToday,

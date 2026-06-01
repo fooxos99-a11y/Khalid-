@@ -203,7 +203,7 @@ export function TeacherAttendanceContent({
       setDelayMinutes(String(parsedMinutes))
       setIsDelayDialogOpen(false)
       await fetchAttendanceRecords()
-      await showAlert(`تم ضبط مدة التأخير إلى ${parsedMinutes} دقيقة بعد أذان العصر في بريدة`, "نجاح")
+      await showAlert(`تم ضبط مدة التأخير إلى ${parsedMinutes} دقيقة بعد أذان العصر في القصيم`, "نجاح")
     } catch (error) {
       console.error("[teacher-attendance] Error saving teacher delay setting:", error)
       await showAlert(error instanceof Error ? error.message : "حدث خطأ أثناء حفظ مدة التأخير", "خطأ")
@@ -347,7 +347,7 @@ export function TeacherAttendanceContent({
       <DialogContent className="sm:max-w-[420px]" dir="rtl">
         <DialogHeader>
           <DialogTitle className="text-xl text-[#1a2332] text-right">مدة التأخير</DialogTitle>
-          <DialogDescription className="text-sm text-neutral-500 text-right">يتم احتساب التأخير بعد أذان العصر في بريدة بهذه المدة</DialogDescription>
+          <DialogDescription className="text-sm text-neutral-500 text-right">يتم احتساب التأخير بعد أذان العصر في القصيم بهذه المدة</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4 text-right">
           <div className="space-y-2">
