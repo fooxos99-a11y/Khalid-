@@ -16,7 +16,8 @@ type QueueTrackerState = {
 }
 
 const STORAGE_KEY = "global-whatsapp-queue-tracker"
-const POLL_INTERVAL_MS = 2000
+const ACTIVE_POLL_INTERVAL_MS = 2000
+const IDLE_POLL_INTERVAL_MS = 10000
 
 function readStoredTrackerState() {
   if (typeof window === "undefined") {
@@ -105,6 +106,7 @@ async function readQueueSnapshot() {
 export function WhatsAppQueueIndicator({ enabled, buttonClassName, iconClassName }: WhatsAppQueueIndicatorProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [tracker, setTracker] = useState<QueueTrackerState>({ pendingCount: 0, totalCount: 0 })
+  const pollIntervalMs = tracker.pendingCount > 0 ? ACTIVE_POLL_INTERVAL_MS : IDLE_POLL_INTERVAL_MS
 
   useEffect(() => {
     if (!enabled) {
@@ -138,15 +140,29 @@ export function WhatsAppQueueIndicator({ enabled, buttonClassName, iconClassName
     }
 
     void syncQueueState()
+
+    const handleVisibilityRefresh = () => {
+      if (document.visibilityState === "visible") {
+        void syncQueueState()
+      }
+    }
+
     const intervalId = window.setInterval(() => {
-      void syncQueueState()
-    }, POLL_INTERVAL_MS)
+      if (document.visibilityState === "visible") {
+        void syncQueueState()
+      }
+    }, pollIntervalMs)
+
+    window.addEventListener("focus", handleVisibilityRefresh)
+    document.addEventListener("visibilitychange", handleVisibilityRefresh)
 
     return () => {
       disposed = true
       window.clearInterval(intervalId)
+      window.removeEventListener("focus", handleVisibilityRefresh)
+      document.removeEventListener("visibilitychange", handleVisibilityRefresh)
     }
-  }, [enabled])
+  }, [enabled, pollIntervalMs])
 
   const sentCount = useMemo(() => {
     if (tracker.totalCount <= 0) {

@@ -453,16 +453,32 @@ export function Header() {
   };
 
   useEffect(() => {
+    let animationFrameId = 0;
+
     const syncHeaderAppearance = () => {
       const shouldUseSolidHeader = pathname !== "/" || isMobileMenuOpen || window.scrollY > 16;
-      setIsHeaderSolid(shouldUseSolidHeader);
+      setIsHeaderSolid((currentValue) => (currentValue === shouldUseSolidHeader ? currentValue : shouldUseSolidHeader));
+    };
+
+    const handleScroll = () => {
+      if (animationFrameId) {
+        return;
+      }
+
+      animationFrameId = window.requestAnimationFrame(() => {
+        animationFrameId = 0;
+        syncHeaderAppearance();
+      });
     };
 
     syncHeaderAppearance();
-    window.addEventListener("scroll", syncHeaderAppearance, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      window.removeEventListener("scroll", syncHeaderAppearance);
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+      window.removeEventListener("scroll", handleScroll);
     };
   }, [isMobileMenuOpen, pathname]);
 
@@ -659,17 +675,26 @@ export function Header() {
     if (role === "student") {
       fetchUnread();
     }
-    const unreadIntervalId = window.setInterval(() => {
-      if (role === "student") {
-        void fetchUnread();
-      }
-    }, 30000);
     const handleUnreadRefresh = () => {
-      if (role === "student") {
+      if (role === "student" && document.visibilityState === "visible") {
         void fetchUnread();
       }
     };
+
+    const unreadIntervalId = window.setInterval(() => {
+      if (role === "student" && document.visibilityState === "visible") {
+        void fetchUnread();
+      }
+    }, 60000);
+
+    const handleUnreadVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        handleUnreadRefresh();
+      }
+    };
+
     window.addEventListener("focus", handleUnreadRefresh);
+    document.addEventListener("visibilitychange", handleUnreadVisibilityChange);
 
     if (loggedIn && (role === "teacher" || role === "deputy_teacher")) {
       const accNum = localStorage.getItem("accountNumber");
@@ -704,7 +729,7 @@ export function Header() {
     }
 
     // Verify fresh role from DB (background) to keep sidebar in sync
-    if (loggedIn) {
+    if (loggedIn && role && !["student", "teacher", "deputy_teacher"].includes(role)) {
       const accountNumber = localStorage.getItem("accountNumber");
       if (accountNumber) {
         verifyFreshRole(accountNumber);
@@ -725,6 +750,7 @@ export function Header() {
     return () => {
       window.clearInterval(unreadIntervalId);
       window.removeEventListener("focus", handleUnreadRefresh);
+      document.removeEventListener("visibilitychange", handleUnreadVisibilityChange);
       window.removeEventListener("app-login", handleAppLogin);
     };
   }, []);

@@ -92,6 +92,11 @@ function getRunningWorkerPid(lockFilePath: string) {
   }
 }
 
+function isLoopbackHost(hostname: string) {
+  const normalizedHost = String(hostname || "").trim().toLowerCase()
+  return normalizedHost === "localhost" || normalizedHost === "127.0.0.1" || normalizedHost === "::1"
+}
+
 export async function POST(request: Request) {
   const auth = await requireRoles(request, ["admin", "supervisor"])
   if ("response" in auth) {
@@ -104,7 +109,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "وضع الإرسال الحالي سحابي. شغّل عامل VPS بدل التشغيل المحلي." }, { status: 409 })
     }
 
-    if (process.env.VERCEL) {
+    const requestHostname = (() => {
+      try {
+        return new URL(request.url).hostname
+      } catch {
+        return ""
+      }
+    })()
+
+    const isHostedVercelRuntime = Boolean(process.env.VERCEL) && !isLoopbackHost(requestHostname)
+
+    if (isHostedVercelRuntime) {
       return NextResponse.json({ error: "التشغيل التلقائي للعامل المحلي غير متاح على Vercel" }, { status: 409 })
     }
 
