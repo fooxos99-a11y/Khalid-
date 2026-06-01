@@ -126,7 +126,7 @@ function finalizeStatus(payload: WorkerStatusPayload, qrExists: boolean) {
     (payload.qrAvailable && (hasQrValue || qrExists)) ||
     (hasQrValue && !payload.authenticated)
   )
-  const hasQr = workerOnline ? rawHasQr : false
+  const hasQr = rawHasQr
   const shouldPreserveQrState = Boolean(
     hasQr &&
     !payload.authenticated &&
