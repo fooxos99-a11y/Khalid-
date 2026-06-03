@@ -7,6 +7,7 @@ import { ConfirmDialogProvider } from "@/hooks/use-confirm-dialog"
 import { NotificationPermissionPrompt } from "@/components/notification-permission-prompt"
 import { NativeNotificationBridge } from "@/components/native-notification-bridge"
 import { PwaRegistration } from "@/components/pwa-registration"
+import { SiteDesignApplier } from "@/components/site-design-applier"
 import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
@@ -43,6 +44,7 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" className={cairo.variable}>
       <head />
       <body className="antialiased" suppressHydrationWarning>
+        <SiteDesignApplier />
         <PwaRegistration />
         <NativeNotificationBridge />
         <NotificationPermissionPrompt />

@@ -108,7 +108,13 @@ function getAutoRefreshIntervalMs(status: WhatsAppStatusResponse, imageFailed: b
   }
 }
 
-function getStatusUi(status: WhatsAppStatusResponse, isStartingWorker: boolean, startupError: string | null) {
+function getDeliveryModeLabel(mode: WhatsAppDeliveryMode) {
+  return mode === "local" ? "العامل المحلي" : "العامل السحابي"
+}
+
+function getStatusUi(status: WhatsAppStatusResponse, deliveryMode: WhatsAppDeliveryMode, isStartingWorker: boolean, startupError: string | null) {
+  const modeLabel = getDeliveryModeLabel(deliveryMode)
+
   if (startupError) {
     return {
       label: "تعذر تشغيل العامل المحلي",
@@ -125,15 +131,15 @@ function getStatusUi(status: WhatsAppStatusResponse, isStartingWorker: boolean, 
 
   if (status.workerOnline && status.ready && status.authenticated && status.status === "connected") {
     return {
-      label: "تم الربط",
-      description: "الواتساب متصل الآن",
+      label: `تم الربط بـ${modeLabel}`,
+      description: `الواتساب متصل الآن عبر ${modeLabel}.`,
     }
   }
 
   if (!status.workerOnline) {
     return {
-      label: status.workerMode === "local" ? "عامل واتساب المحلي غير متصل" : "عامل واتساب غير متصل",
-      description: "الخادم المسؤول عن واتساب غير متصل حالياً.",
+      label: `${modeLabel} غير متصل`,
+      description: `${modeLabel} غير متصل حالياً، لذلك لن يظهر إلا باركوده هو عند توفره.`,
     }
   }
 
@@ -204,7 +210,7 @@ export function WhatsAppQrDialog({ open, onOpenChange, initialStatus }: WhatsApp
   const [startupError, setStartupError] = useState<string | null>(null)
   const hasAttemptedAutoStartRef = useRef(false)
 
-  const statusUi = useMemo(() => getStatusUi(status, isStartingWorker, startupError), [isStartingWorker, startupError, status])
+  const statusUi = useMemo(() => getStatusUi(status, deliveryMode, isStartingWorker, startupError), [deliveryMode, isStartingWorker, startupError, status])
   const isConnected = status.workerOnline && status.ready && status.authenticated && status.status === "connected"
   const canDisconnect = isConnected && !isDisconnecting
   const autoRefreshIntervalMs = getAutoRefreshIntervalMs(status, imageFailed, isStartingWorker)
@@ -547,7 +553,7 @@ export function WhatsAppQrDialog({ open, onOpenChange, initialStatus }: WhatsApp
                   <Smartphone className="h-14 w-14 text-[#3453a7]" />
                 )}
                 <div className="space-y-2">
-                  <p className="text-lg font-black text-[#1a2332]">{isConnected ? "تم الربط بنجاح" : statusUi.label}</p>
+                  <p className="text-lg font-black text-[#1a2332]">{statusUi.label}</p>
                   <p className="text-sm font-bold text-[#64748b]">{statusUi.description}</p>
                 </div>
               </div>

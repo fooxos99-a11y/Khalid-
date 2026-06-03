@@ -1,6 +1,7 @@
 import fs from "fs"
 import path from "path"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { readWhatsAppDeliveryMode, type WhatsAppDeliveryMode } from "@/lib/whatsapp-delivery-mode"
 import { WHATSAPP_WORKER_STATE_SETTING_ID } from "@/lib/whatsapp-site-config"
 
 function sanitizeInstanceSlug(value: string | null | undefined) {
@@ -72,7 +73,7 @@ type WorkerStatusPayload = {
 
 type WhatsAppWorkerStatus = {
   instanceSlug: string | null
-  workerMode: string | null
+  workerMode: WhatsAppDeliveryMode | null
   deviceLabel: string | null
   status: string
   qrAvailable: boolean
@@ -88,6 +89,32 @@ type WhatsAppWorkerStatus = {
   workerOnline: boolean
   qrImageUrl: string | null
   qrValue: string | null
+}
+
+function normalizeWorkerMode(value: unknown): WhatsAppDeliveryMode | null {
+  const normalizedValue = String(value || "").trim().toLowerCase()
+
+  if (["local", "device", "desktop"].includes(normalizedValue)) {
+    return "local"
+  }
+
+  if (["cloud", "vps", "server", "remote"].includes(normalizedValue)) {
+    return "cloud"
+  }
+
+  return null
+}
+
+function getModeDeviceLabel(mode: WhatsAppDeliveryMode) {
+  return mode === "local" ? "العامل المحلي" : "العامل السحابي"
+}
+
+function withRequestedMode(status: WhatsAppWorkerStatus, mode: WhatsAppDeliveryMode): WhatsAppWorkerStatus {
+  return {
+    ...status,
+    workerMode: mode,
+    deviceLabel: status.deviceLabel || getModeDeviceLabel(mode),
+  }
 }
 
 export function getDefaultWhatsAppWorkerStatus(): WhatsAppWorkerStatus {
@@ -143,7 +170,7 @@ function finalizeStatus(payload: WorkerStatusPayload, qrExists: boolean) {
     ...fallback,
     ...payload,
     instanceSlug: typeof payload.instanceSlug === "string" && payload.instanceSlug.trim() ? payload.instanceSlug : null,
-    workerMode: typeof payload.workerMode === "string" && payload.workerMode.trim() ? payload.workerMode : null,
+    workerMode: normalizeWorkerMode(payload.workerMode),
     deviceLabel: typeof payload.deviceLabel === "string" && payload.deviceLabel.trim() ? payload.deviceLabel : null,
     status: resolvedStatus,
     ready: isConnected,
@@ -180,7 +207,11 @@ function getStatusTimestamp(status: WhatsAppWorkerStatus) {
 }
 
 export async function readWhatsAppWorkerStatus() {
-  const localStatus = readLocalWhatsAppWorkerStatus()
+  const requestedMode = await readWhatsAppDeliveryMode()
+
+  if (requestedMode === "local") {
+    return withRequestedMode(readLocalWhatsAppWorkerStatus(), "local")
+  }
 
   try {
     const supabase = createAdminClient()
@@ -192,13 +223,15 @@ export async function readWhatsAppWorkerStatus() {
 
     if (!error && data?.value) {
       const sharedStatus = finalizeStatus(data.value as WorkerStatusPayload, false)
-      return getStatusTimestamp(localStatus) > getStatusTimestamp(sharedStatus) ? localStatus : sharedStatus
+      if (sharedStatus.workerMode === "cloud") {
+        return withRequestedMode(sharedStatus, "cloud")
+      }
     }
   } catch {
-    // Fall back to local status files when shared state is unavailable.
+    // Fall back to default cloud status when shared state is unavailable.
   }
 
-  return localStatus
+  return withRequestedMode(getDefaultWhatsAppWorkerStatus(), "cloud")
 }
 
 export function isWhatsAppWorkerReady(status: ReturnType<typeof getDefaultWhatsAppWorkerStatus>) {
