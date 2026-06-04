@@ -1,14 +1,18 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getSaudiDateString } from "@/lib/saudi-time"
+import { getRequestSession, unauthorizedResponse } from "@/lib/auth/guards"
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getRequestSession(request)
+    if (!session) {
+      return unauthorizedResponse()
+    }
+
     const searchParams = request.nextUrl.searchParams
     const teacherId = searchParams.get("teacher_id")
     const date = searchParams.get("date")
-
-    console.log("[v0] GET teacher-attendance:", { teacherId, date })
 
     if (!teacherId || !date) {
       return NextResponse.json({ error: "teacher_id and date are required" }, { status: 400 })
@@ -42,8 +46,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getRequestSession(request)
+    if (!session) {
+      return unauthorizedResponse()
+    }
+
     const body = await request.json()
-    console.log("[v0] POST teacher-attendance body:", body)
 
     const { teacher_id, teacher_name, account_number, status, check_in_time } = body
 

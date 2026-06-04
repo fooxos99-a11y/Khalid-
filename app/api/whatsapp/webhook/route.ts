@@ -5,7 +5,8 @@ import { WHATSAPP_HISTORY_TABLE, WHATSAPP_REPLIES_TABLE } from "@/lib/whatsapp-s
 function verifyWebhookSignature(rawBody: string, signatureHeader?: string | null) {
   const appSecret = process.env.WHATSAPP_APP_SECRET || process.env.META_APP_SECRET
   if (!appSecret) {
-    return true
+    console.warn("[Webhook] WHATSAPP_APP_SECRET is not configured — rejecting request")
+    return false
   }
 
   const providedSignature = String(signatureHeader || "").trim()

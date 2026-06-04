@@ -1,9 +1,16 @@
 import { getSiteSetting } from "@/lib/site-settings";
 import { DEFAULT_STORE_STATUS_SETTINGS, STORE_STATUS_SETTING_ID } from "@/lib/site-settings-constants";
 import { normalizeStoreStatus } from "@/lib/store-status";
+import { getRequestSession, unauthorizedResponse } from "@/lib/auth/guards";
+import { isPrivilegedRole } from "@/lib/auth/guards";
 
 export async function DELETE(request: Request) {
   try {
+    const session = await getRequestSession(request);
+    if (!session || !isPrivilegedRole(session.role)) {
+      return unauthorizedResponse();
+    }
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!

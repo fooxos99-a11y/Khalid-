@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getRequestSession, unauthorizedResponse } from "@/lib/auth/guards"
 
 export async function GET(request: NextRequest) {
 	try {
+		const session = await getRequestSession(request)
+		if (!session) {
+			return unauthorizedResponse()
+		}
+
 		const accountNumber = request.nextUrl.searchParams.get("account_number")
 
 		if (!accountNumber) {

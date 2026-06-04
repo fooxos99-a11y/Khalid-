@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
+import { getRequestSession, unauthorizedResponse, isPrivilegedRole } from '@/lib/auth/guards'
 
 export async function GET() {
   try {
@@ -24,6 +25,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await getRequestSession(request)
+    if (!session || !isPrivilegedRole(session.role)) {
+      return unauthorizedResponse()
+    }
+
     const supabase = createAdminClient()
     const body = await request.json()
     
@@ -50,6 +56,11 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const session = await getRequestSession(request)
+    if (!session || !isPrivilegedRole(session.role)) {
+      return unauthorizedResponse()
+    }
+
     const supabase = createAdminClient()
     const body = await request.json()
     
@@ -78,6 +89,11 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const session = await getRequestSession(request)
+    if (!session || !isPrivilegedRole(session.role)) {
+      return unauthorizedResponse()
+    }
+
     const supabase = createAdminClient()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

@@ -44,11 +44,7 @@ function isAuthorized(request: NextRequest) {
   }
 
   const authHeader = request.headers.get("authorization")
-  if (authHeader === `Bearer ${secret}`) {
-    return true
-  }
-
-  return request.nextUrl.searchParams.get("secret") === secret
+  return authHeader === `Bearer ${secret}`
 }
 
 async function loadPlayedStudentIdsForChallenge(
