@@ -149,8 +149,17 @@ export async function POST(request: Request) {
     const existingStudentIds = new Set<string>()
 
     if (accountNumbers.length > 0) {
-      const { data: existingUsers } = await supabase.from("users").select("account_number").in("account_number", accountNumbers)
-      const { data: existingStudents } = await supabase.from("students").select("account_number").in("account_number", accountNumbers)
+      const { data: existingUsers, error: usersError } = await supabase.from("users").select("account_number").in("account_number", accountNumbers)
+      const { data: existingStudents, error: studentsError } = await supabase.from("students").select("account_number").in("account_number", accountNumbers)
+
+      if (usersError) {
+        console.error("[teachers/bulk] Error checking existing user accounts:", usersError)
+        return NextResponse.json({ error: getSupabaseErrorMessage(usersError) }, { status: 500 })
+      }
+      if (studentsError) {
+        console.error("[teachers/bulk] Error checking existing student accounts:", studentsError)
+        return NextResponse.json({ error: getSupabaseErrorMessage(studentsError) }, { status: 500 })
+      }
 
       for (const row of existingUsers || []) {
         if (typeof row.account_number === "number") existingUserAccounts.add(row.account_number)
@@ -162,8 +171,17 @@ export async function POST(request: Request) {
     }
 
     if (idNumbers.length > 0) {
-      const { data: existingUsersById } = await supabase.from("users").select("id_number").in("id_number", idNumbers)
-      const { data: existingStudentsById } = await supabase.from("students").select("id_number").in("id_number", idNumbers)
+      const { data: existingUsersById, error: usersByIdError } = await supabase.from("users").select("id_number").in("id_number", idNumbers)
+      const { data: existingStudentsById, error: studentsByIdError } = await supabase.from("students").select("id_number").in("id_number", idNumbers)
+
+      if (usersByIdError) {
+        console.error("[teachers/bulk] Error checking existing user IDs:", usersByIdError)
+        return NextResponse.json({ error: getSupabaseErrorMessage(usersByIdError) }, { status: 500 })
+      }
+      if (studentsByIdError) {
+        console.error("[teachers/bulk] Error checking existing student IDs:", studentsByIdError)
+        return NextResponse.json({ error: getSupabaseErrorMessage(studentsByIdError) }, { status: 500 })
+      }
 
       for (const row of existingUsersById || []) {
         const value = String(row.id_number || "").trim()

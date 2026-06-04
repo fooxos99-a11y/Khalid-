@@ -114,12 +114,15 @@ export async function POST(request: Request) {
 
     if (body.theme_key) {
       // إذا كان المنتج مظهرًا، قم بتسجيله في جدول المشتريات (purchases) ليكون متاحًا في الملف الشخصي
-      // نتجاهل الخطأ هنا في حال كان مسجلاً مسبقًا
-      await supabase.from("purchases").insert({
+      const { error: purchaseError } = await supabase.from("purchases").insert({
         student_id,
         product_id: `theme_${body.theme_key}`,
         price
       });
+      // تجاهل أخطاء التكرار (duplicate) فقط
+      if (purchaseError && purchaseError.code !== "23505") {
+        console.error("[store-orders] Error saving theme purchase:", purchaseError);
+      }
     }
 
     console.log("[store-orders] Success");

@@ -3,6 +3,7 @@ import { requireRoles } from "@/lib/auth/guards"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function GET(request: Request) {
+  try {
   const auth = await requireRoles(request, ["admin", "supervisor"])
   if ("response" in auth) {
     return auth.response
@@ -129,4 +130,8 @@ export async function GET(request: Request) {
   })
 
   return NextResponse.json({ records })
+  } catch (error) {
+    console.error("[student-attendance/all] Unexpected error:", error)
+    return NextResponse.json({ error: "حدث خطأ غير متوقع" }, { status: 500 })
+  }
 }

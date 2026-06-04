@@ -19,19 +19,22 @@ export async function GET(request: Request) {
       .maybeSingle()
 
     if (error) {
+      console.error("[roles] Error fetching role settings:", error)
       return NextResponse.json(DEFAULT_ADMIN_ROLE_SETTINGS)
     }
 
     if (data && data.description) {
       try {
         return NextResponse.json(normalizeAdminRoleSettings(JSON.parse(data.description)))
-      } catch {
+      } catch (parseError) {
+        console.error("[roles] Error parsing role settings JSON:", parseError)
         return NextResponse.json(DEFAULT_ADMIN_ROLE_SETTINGS)
       }
     }
 
     return NextResponse.json(DEFAULT_ADMIN_ROLE_SETTINGS)
-  } catch {
+  } catch (error) {
+    console.error("[roles] Unexpected error in GET:", error)
     return NextResponse.json(DEFAULT_ADMIN_ROLE_SETTINGS)
   }
 }

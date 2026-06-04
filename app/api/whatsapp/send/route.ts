@@ -399,7 +399,8 @@ async function enqueueMessage(data: QueueMessageInput) {
       sent_at: null,
     }], { includesMedia: Boolean(data.media) })
   } catch (historyError) {
-    console.error("[WhatsApp History] Error saving message history:", historyError)
+    // Non-critical: message is already queued, but log for debugging
+    console.error("[WhatsApp History] Error saving message history (message_id=%s):", data.id, historyError)
   }
 
   return queuedMessage
@@ -494,7 +495,8 @@ async function enqueueMessagesBulk(params: {
     try {
       await insertWhatsAppHistoryRows(supabase, historyRows, { includesMedia: historyRows.some((row) => row.message_type !== "text") })
     } catch (historyError) {
-      console.error("[WhatsApp History] Error bulk saving message history:", historyError)
+      // Non-critical: messages are already queued, but log for debugging
+      console.error("[WhatsApp History] Error bulk saving message history (count=%d):", historyRows.length, historyError)
     }
   }
 
