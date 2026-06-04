@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getRequestSession, unauthorizedResponse, isPrivilegedRole } from "@/lib/auth/guards";
 
 export async function PATCH(request: Request) {
+  const session = await getRequestSession(request);
+  if (!session || !isPrivilegedRole(session.role)) {
+    return unauthorizedResponse();
+  }
+
   const body = await request.json();
   const { order_id, mark_all } = body;
   const supabase = createClient(

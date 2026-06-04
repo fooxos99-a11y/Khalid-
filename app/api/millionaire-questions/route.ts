@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
+import { getRequestSession, unauthorizedResponse, isPrivilegedRole } from '@/lib/auth/guards'
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'] as const
 
@@ -73,6 +74,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await getRequestSession(request)
+    if (!session || !isPrivilegedRole(session.role)) {
+      return unauthorizedResponse()
+    }
+
     const supabase = createAdminClient()
     const body = await request.json()
     const normalized = normalizePayload(body)
@@ -98,6 +104,11 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const session = await getRequestSession(request)
+    if (!session || !isPrivilegedRole(session.role)) {
+      return unauthorizedResponse()
+    }
+
     const supabase = createAdminClient()
     const body = await request.json()
 
@@ -132,6 +143,11 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const session = await getRequestSession(request)
+    if (!session || !isPrivilegedRole(session.role)) {
+      return unauthorizedResponse()
+    }
+
     const supabase = createAdminClient()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
