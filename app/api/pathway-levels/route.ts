@@ -2,16 +2,7 @@ import { NextResponse } from "next/server"
 
 import { requireRoles } from "@/lib/auth/guards"
 import { createAdminClient } from "@/lib/supabase/admin"
-
-function getErrorMessage(error: unknown) {
-  if (!error) return "حدث خطأ غير معروف"
-  if (error instanceof Error) return error.message || "حدث خطأ غير معروف"
-  if (typeof error === "object") {
-    const candidate = error as { message?: string; details?: string; hint?: string; code?: string }
-    return candidate.message || candidate.details || candidate.hint || candidate.code || JSON.stringify(candidate)
-  }
-  return String(error)
-}
+import { getErrorMessage } from "@/lib/errors"
 
 export async function GET(request: Request) {
   try {

@@ -3,16 +3,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireRoles } from "@/lib/auth/guards"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getOrCreateActiveSemester, isMissingSemestersTable, isNoActiveSemesterError } from "@/lib/semesters"
-import { getStudyWeekEnd, getStudyWeekStart, isStudyDay } from "@/lib/study-calendar"
+import { countStudyDaysInRange, getDateRange, getStudyWeekEnd, getStudyWeekStart, isStudyDay, type CustomDateRange, type DateFilter } from "@/lib/study-calendar"
 import { getPlanForDate, groupPlansByStudent } from "@/lib/plan-history"
 import { calculatePreviousMemorizedPages, resolvePlanReviewPagesForDate, resolvePlanReviewPoolPages } from "@/lib/quran-data"
 import { applyAttendancePointsAdjustment, calculateTotalEvaluationPoints, isPassingMemorizationLevel } from "@/lib/student-attendance"
+import { getReadableErrorMessage } from "@/lib/errors"
+import { formatDateForQuery } from "@/lib/saudi-time"
 
-type DateFilter = "today" | "currentWeek" | "currentMonth" | "currentSemester" | "all" | "custom"
-type CustomDateRange = {
-  start: string
-  end: string
-}
 
 type StudentRow = {
   id: string
@@ -115,78 +112,6 @@ const TEXT = {
 
 const MAX_EVALUATION_POINTS_PER_STUDY_DAY = 40
 
-function getReadableErrorMessage(error: unknown) {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message
-  }
-
-  if (typeof error === "string" && error.trim()) {
-    return error
-  }
-
-  if (error && typeof error === "object") {
-    const candidate = error as { message?: unknown; error?: unknown; details?: unknown; hint?: unknown; code?: unknown }
-    const parts = [candidate.message, candidate.error, candidate.details, candidate.hint, candidate.code]
-      .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
-
-    if (parts.length > 0) {
-      return parts.join(" - ")
-    }
-  }
-
-  return "حدث خطأ غير معروف أثناء تحميل البيانات"
-}
-
-function formatDateForQuery(value: Date) {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Riyadh" }).format(value)
-}
-
-function countStudyDaysInRange(start: Date, end: Date) {
-  const cursor = new Date(start)
-  cursor.setHours(0, 0, 0, 0)
-
-  const normalizedEnd = new Date(end)
-  normalizedEnd.setHours(0, 0, 0, 0)
-
-  let count = 0
-  while (cursor <= normalizedEnd) {
-    if (isStudyDay(cursor)) {
-      count += 1
-    }
-    cursor.setDate(cursor.getDate() + 1)
-  }
-
-  return count
-}
-
-function getDateRange(filter: DateFilter, customRange: CustomDateRange) {
-  const end = new Date()
-  const start = new Date()
-
-  if (filter === "today") {
-    return { start: new Date(start.setHours(0, 0, 0, 0)), end }
-  }
-
-  if (filter === "currentWeek") {
-    return { start: getStudyWeekStart(), end: getStudyWeekEnd() }
-  }
-
-  if (filter === "currentMonth") {
-    start.setDate(1)
-    start.setHours(0, 0, 0, 0)
-    return { start, end }
-  }
-
-  if (filter === "custom") {
-    return {
-      start: new Date(`${customRange.start}T00:00:00`),
-      end: new Date(`${customRange.end}T23:59:59`),
-    }
-  }
-
-  start.setFullYear(2020, 0, 1)
-  return { start, end }
-}
 
 function getEvaluationRecord(value: AttendanceRow["evaluations"]): EvaluationRecord {
   if (Array.isArray(value)) {

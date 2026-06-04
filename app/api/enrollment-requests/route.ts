@@ -7,18 +7,9 @@ import {
   saveEnrollmentNotificationTemplates,
 } from "@/lib/enrollment-notification-templates"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getErrorMessage } from "@/lib/errors"
 
 const ENROLLMENT_STATUS_PROGRAM_ID = "00000000-0000-0000-0000-000000000000"
-
-function getErrorMessage(error: unknown) {
-  if (!error) return "حدث خطأ غير معروف"
-  if (error instanceof Error) return error.message || "حدث خطأ غير معروف"
-  if (typeof error === "object") {
-    const candidate = error as { message?: string; details?: string; hint?: string; code?: string }
-    return candidate.message || candidate.details || candidate.hint || candidate.code || JSON.stringify(candidate)
-  }
-  return String(error)
-}
 
 export async function GET(request: Request) {
   try {

@@ -30,3 +30,75 @@ export function getStudyWeekEnd(anchor: Date | string = new Date()) {
   end.setHours(23, 59, 59, 999);
   return end;
 }
+
+export type DateFilter = "today" | "currentWeek" | "currentMonth" | "currentSemester" | "all" | "custom"
+
+export type CustomDateRange = {
+  start: string
+  end: string
+}
+
+export function countStudyDaysInRange(start: Date, end: Date) {
+  const cursor = new Date(start)
+  cursor.setHours(0, 0, 0, 0)
+
+  const normalizedEnd = new Date(end)
+  normalizedEnd.setHours(0, 0, 0, 0)
+
+  let count = 0
+  while (cursor <= normalizedEnd) {
+    if (isStudyDay(cursor)) {
+      count += 1
+    }
+    cursor.setDate(cursor.getDate() + 1)
+  }
+
+  return count
+}
+
+export function getStudyDatesInRange(start: Date, end: Date, formatDate: (d: Date) => string) {
+  const cursor = new Date(start)
+  cursor.setHours(0, 0, 0, 0)
+
+  const normalizedEnd = new Date(end)
+  normalizedEnd.setHours(0, 0, 0, 0)
+
+  const studyDates: string[] = []
+  while (cursor <= normalizedEnd) {
+    if (isStudyDay(cursor)) {
+      studyDates.push(formatDate(cursor))
+    }
+    cursor.setDate(cursor.getDate() + 1)
+  }
+
+  return studyDates
+}
+
+export function getDateRange(filter: DateFilter, customRange: CustomDateRange) {
+  const end = new Date()
+  const start = new Date()
+
+  if (filter === "today") {
+    return { start: new Date(start.setHours(0, 0, 0, 0)), end }
+  }
+
+  if (filter === "currentWeek") {
+    return { start: getStudyWeekStart(), end: getStudyWeekEnd() }
+  }
+
+  if (filter === "currentMonth") {
+    start.setDate(1)
+    start.setHours(0, 0, 0, 0)
+    return { start, end }
+  }
+
+  if (filter === "custom") {
+    return {
+      start: new Date(`${customRange.start}T00:00:00`),
+      end: new Date(`${customRange.end}T23:59:59`),
+    }
+  }
+
+  start.setFullYear(2020, 0, 1)
+  return { start, end }
+}

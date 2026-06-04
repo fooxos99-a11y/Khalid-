@@ -12,37 +12,11 @@ import { getJuzBounds, getLegacyPreviousMemorizationFields, getNormalizedComplet
 import { getOrCreateActiveSemester, isMissingSemestersTable, isNoActiveSemesterError } from "@/lib/semesters"
 import { buildExamAppNotificationMessage, fillExamWhatsAppTemplate, getExamWhatsAppTemplates } from "@/lib/whatsapp-notification-templates"
 import { enqueueWhatsAppMessage } from "@/lib/whatsapp-queue"
+import { getErrorMessage } from "@/lib/errors"
+import { isMissingExamPortionColumns, isMissingStudentExamsTable } from "@/lib/table-checks"
 
 const ADVANCING_MEMORIZATION_LEVELS = ["excellent", "good", "very_good"]
 
-function getErrorMessage(error: unknown) {
-	if (!error) return "حدث خطأ غير معروف"
-	if (error instanceof Error) return error.message || "حدث خطأ غير معروف"
-	if (typeof error === "object") {
-		const candidate = error as { message?: string; details?: string; hint?: string; code?: string }
-		return candidate.message || candidate.details || candidate.hint || candidate.code || JSON.stringify(candidate)
-	}
-	return String(error)
-}
-
-function isMissingStudentExamsTable(error: unknown) {
-	if (!error || typeof error !== "object") {
-		return false
-	}
-
-	const candidate = error as { code?: unknown; message?: unknown; details?: unknown }
-	return (
-		candidate.code === "42P01" ||
-		candidate.code === "PGRST205" ||
-		(typeof candidate.message === "string" && candidate.message.includes("student_exams")) ||
-		(typeof candidate.details === "string" && candidate.details.includes("student_exams"))
-	)
-}
-
-function isMissingExamPortionColumns(error: unknown) {
-	const message = getErrorMessage(error)
-	return /portion_type|portion_number/i.test(message) && /column|does not exist|schema cache/i.test(message)
-}
 
 function parseCount(value: unknown) {
 	const parsed = Number(value)

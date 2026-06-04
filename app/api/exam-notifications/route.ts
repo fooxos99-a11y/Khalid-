@@ -5,6 +5,7 @@ import { insertNotificationsAndSendPush } from "@/lib/push-notifications"
 import { formatExamPortionLabel } from "@/lib/student-exams"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { buildExamAppNotificationMessage, getExamWhatsAppTemplates } from "@/lib/whatsapp-notification-templates"
+import { getErrorMessage } from "@/lib/errors"
 
 function formatScheduledDate(dateValue: string) {
   const [year, month, day] = String(dateValue || "").split("-")
@@ -13,16 +14,6 @@ function formatScheduledDate(dateValue: string) {
   }
 
   return `${year}/${month}/${day}`
-}
-
-function getErrorMessage(error: unknown) {
-  if (!error) return "حدث خطأ غير معروف"
-  if (error instanceof Error) return error.message || "حدث خطأ غير معروف"
-  if (typeof error === "object") {
-    const candidate = error as { message?: string; details?: string; hint?: string; code?: string }
-    return candidate.message || candidate.details || candidate.hint || candidate.code || JSON.stringify(candidate)
-  }
-  return String(error)
 }
 
 export async function POST(request: Request) {

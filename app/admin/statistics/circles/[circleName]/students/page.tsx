@@ -9,6 +9,7 @@ import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { SiteLoader } from "@/components/ui/site-loader";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
+import { getReadableErrorMessage } from "@/lib/errors";
 
 type StudentIndicatorSummary = {
   id: string;
@@ -48,17 +49,6 @@ function formatPercent(value: number) {
   }).format(Math.max(0, Math.min(100, value)))}%`;
 }
 
-function getReadableErrorMessage(error: unknown) {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message;
-  }
-
-  if (typeof error === "string" && error.trim()) {
-    return error;
-  }
-
-  return "حدث خطأ غير معروف أثناء تحميل البيانات";
-}
 
 function MetricBar({
   label,

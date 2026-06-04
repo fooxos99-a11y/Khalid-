@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
+import { getErrorMessage } from "@/lib/errors"
 import { requireRoles } from "@/lib/auth/guards"
 import { normalizeGuardianPhoneForStorage } from "@/lib/phone-number"
 
@@ -32,18 +33,8 @@ function normalizeDigits(value: unknown) {
   return normalizeLocalizedDigits(String(value || "")).replace(/\D/g, "")
 }
 
-function getSupabaseErrorMessage(error: unknown) {
-  if (!error) return "حدث خطأ غير معروف"
-  if (error instanceof Error) return error.message || "حدث خطأ غير معروف"
-  if (typeof error === "object") {
-    const candidate = error as { message?: string; details?: string; hint?: string; code?: string }
-    return candidate.message || candidate.details || candidate.hint || candidate.code || JSON.stringify(candidate)
-  }
-  return String(error)
-}
-
 function formatBulkTeacherInsertError(error: unknown) {
-  const message = getSupabaseErrorMessage(error)
+  const message = getErrorMessage(error)
 
   if (/account_number/i.test(message) && /duplicate|unique/i.test(message)) {
     return "رقم الحساب موجود بالفعل"

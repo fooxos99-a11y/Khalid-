@@ -8,53 +8,14 @@ import {
   applyAttendancePointsAdjustment,
   calculateEvaluationLevelPoints,
   calculateTotalEvaluationPoints,
+  hasCompleteEvaluation,
   isEvaluatedAttendance,
   isPassingMemorizationLevel,
   isNonEvaluatedAttendance,
 } from "@/lib/student-attendance"
-import { getLegacyPreviousMemorizationFields, getStoredMemorizedRanges, SURAHS, subtractMemorizedRangeFromRanges } from "@/lib/quran-data"
+import { getLegacyPreviousMemorizationFields, getStoredMemorizedRanges, resolveSurahNumber, SURAHS, subtractMemorizedRangeFromRanges } from "@/lib/quran-data"
 import { getOrCreateActiveSemester, isNoActiveSemesterError } from "@/lib/semesters"
-
-function getKsaDateString() {
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Riyadh",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  })
-  const parts = formatter.formatToParts(new Date())
-  const year = parts.find((part) => part.type === "year")?.value
-  const month = parts.find((part) => part.type === "month")?.value
-  const day = parts.find((part) => part.type === "day")?.value
-
-  return `${year}-${month}-${day}`
-}
-
-function hasCompleteEvaluation(levels: {
-  hafiz_level?: string | null
-  tikrar_level?: string | null
-  samaa_level?: string | null
-  rabet_level?: string | null
-}) {
-  return !!(
-    levels.hafiz_level &&
-    levels.tikrar_level &&
-    levels.samaa_level &&
-    levels.rabet_level
-  )
-}
-
-function resolveSurahNumber(value: unknown) {
-  const trimmedValue = String(value || "").trim()
-  if (!trimmedValue) return null
-
-  const numericValue = Number(trimmedValue)
-  if (Number.isInteger(numericValue) && numericValue >= 1 && numericValue <= 114) {
-    return numericValue
-  }
-
-  return SURAHS.find((surah) => surah.name === trimmedValue)?.number || null
-}
+import { getSaudiDateString } from "@/lib/saudi-time"
 
 function getPassingEvaluationMemorizationRange(evaluation: {
   hafiz_level?: string | null
@@ -109,7 +70,7 @@ export async function GET(request: NextRequest) {
         return teacherScopeError
       }
 
-      const todayDate = getKsaDateString()
+      const todayDate = getSaudiDateString()
 
       const { data, error } = await supabase
         .from("attendance_records")
@@ -275,7 +236,7 @@ export async function POST(request: NextRequest) {
     const autoSendSettings = await loadAttendanceAutoSendSettings()
 
     // Get today's date in YYYY-MM-DD format (Asia/Riyadh timezone)
-    const todayDate = getKsaDateString()
+    const todayDate = getSaudiDateString()
     console.log("[DEBUG] تاريخ اليوم في السيرفر (Asia/Riyadh):", todayDate)
     if (debug_today) {
       console.log("[DEBUG] debug_today من المتصفح:", debug_today)
