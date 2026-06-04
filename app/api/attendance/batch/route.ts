@@ -8,16 +8,20 @@ import {
 } from "@/lib/attendance-save-notifications"
 import { loadAttendanceAutoSendSettings } from "@/lib/attendance-auto-send-settings"
 import { ensureTeacherScope, isTeacherRole, requireRoles } from "@/lib/auth/guards"
+import { normalizeHalaqah } from "@/lib/normalize"
+import { isMissingStudentHafizExtrasTable } from "@/lib/table-checks"
 import { isWhatsAppWorkerReady, readWhatsAppWorkerStatus } from "@/lib/whatsapp-worker-status"
 import {
   applyAttendancePointsAdjustment,
   calculateEvaluationLevelPoints,
+  hasCompleteEvaluation,
   isEvaluatedAttendance,
   isNonEvaluatedAttendance,
 } from "@/lib/student-attendance"
 import { getOrCreateActiveSemester, isNoActiveSemesterError } from "@/lib/semesters"
+import { getSaudiDateString } from "@/lib/saudi-time"
 import { getHafizExtraPoints, normalizeHafizExtraPages } from "@/lib/hafiz-extra"
-import { getNextAyahReference, getPageFloatForAyah, SURAHS } from "@/lib/quran-data"
+import { getNextAyahReference, getPageFloatForAyah, resolveSurahNumber, SURAHS } from "@/lib/quran-data"
 
 type ReadingContent = {
   fromSurah?: string | null
@@ -26,55 +30,7 @@ type ReadingContent = {
   toVerse?: string | null
 }
 
-function getKsaDateString() {
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Riyadh",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  })
-  const parts = formatter.formatToParts(new Date())
-  const year = parts.find((part) => part.type === "year")?.value
-  const month = parts.find((part) => part.type === "month")?.value
-  const day = parts.find((part) => part.type === "day")?.value
 
-  return `${year}-${month}-${day}`
-}
-
-function hasCompleteEvaluation(levels: {
-  hafiz_level?: string | null
-  tikrar_level?: string | null
-  samaa_level?: string | null
-  rabet_level?: string | null
-}) {
-  return !!(
-    levels.hafiz_level &&
-    levels.tikrar_level &&
-    levels.samaa_level &&
-    levels.rabet_level
-  )
-}
-
-function normalizeHalaqah(value?: string | null) {
-  return String(value || "").trim().toLowerCase()
-}
-
-function isMissingStudentHafizExtrasTable(error: unknown) {
-  const message = String((error as { message?: string } | null)?.message || error || "")
-  return /student_hafiz_extras/i.test(message) && /does not exist|not exist|relation|table/i.test(message)
-}
-
-function resolveSurahNumber(value: unknown) {
-  const trimmedValue = String(value || "").trim()
-  if (!trimmedValue) return null
-
-  const numericValue = Number(trimmedValue)
-  if (Number.isInteger(numericValue) && numericValue >= 1 && numericValue <= 114) {
-    return numericValue
-  }
-
-  return SURAHS.find((surah) => surah.name === trimmedValue)?.number || null
-}
 
 function calculateReadingContentPages(content?: ReadingContent | null) {
   const startSurahNumber = resolveSurahNumber(content?.fromSurah)
@@ -179,7 +135,7 @@ export async function POST(request: NextRequest) {
     const absenceTemplates = await getAbsenceNotificationTemplates(supabase)
     const attendanceTemplates = await loadAttendanceSaveGuardianTemplates()
     const autoSendSettings = await loadAttendanceAutoSendSettings()
-    const todayDate = getKsaDateString()
+    const todayDate = getSaudiDateString()
     const effectiveTeacherId = isTeacherRole(session.role) ? session.id : teacher_id
     const hasAnyHafizExtra = students.some((student) => normalizeHafizExtraPages(student?.hafizExtraPages) !== null)
 

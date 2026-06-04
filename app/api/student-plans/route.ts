@@ -22,11 +22,13 @@ import {
   getPageFloatForAyah,
   resolvePlanTotalDays,
   resolvePlanTotalPages,
+  resolveSurahNumber,
 } from "@/lib/quran-data"
 import { getScheduledSessionProgress } from "@/lib/plan-progress"
 import { getSaudiDateString } from "@/lib/saudi-time"
 import { buildWeeklyReviewPlan, type ReviewMode } from "@/lib/weekly-review"
 import { isEvaluatedAttendance } from "@/lib/student-attendance"
+import { isMissingStudentExamsTable, isMissingStudentHafizExtrasTable } from "@/lib/table-checks"
 import { getOrCreateActiveSemester, isMissingSemestersTable, isNoActiveSemesterError } from "@/lib/semesters"
 import { normalizeHafizExtraPages } from "@/lib/hafiz-extra"
 
@@ -76,10 +78,6 @@ type PlanMemorizationFallback = {
 
 const ADVANCING_MEMORIZATION_LEVELS = ["excellent", "good", "very_good"]
 
-function isMissingStudentHafizExtrasTable(error: unknown) {
-  const message = String((error as { message?: string } | null)?.message || error || "")
-  return /student_hafiz_extras/i.test(message) && /does not exist|not exist|relation|table/i.test(message)
-}
 
 function getStudentHafizExtraPages(extraRows: HafizExtraRecord[] = [], startDate?: string | null) {
   return extraRows.reduce((sum, row) => {
@@ -316,22 +314,6 @@ function parseRawPreviousRange(range: any) {
     : { startSurahNumber: endSurahNumber, startVerseNumber: endVerseNumber, endSurahNumber: startSurahNumber, endVerseNumber: startVerseNumber }
 }
 
-function resolveSurahNumber(value: unknown) {
-  const trimmedValue = String(value || "").trim()
-  if (!trimmedValue) return null
-
-  const numericValue = Number(trimmedValue)
-  if (Number.isInteger(numericValue) && numericValue >= 1 && numericValue <= 114) {
-    return numericValue
-  }
-
-  return SURAHS.find((surah) => surah.name === trimmedValue)?.number || null
-}
-
-function isMissingStudentExamsTable(error: unknown) {
-  const message = String((error as { message?: string } | null)?.message || error || "")
-  return /student_exams/i.test(message) && /does not exist|not exist|relation|table/i.test(message)
-}
 
 async function clearPassedStudentExams(
   supabase: Awaited<ReturnType<typeof createAdminClient>>,

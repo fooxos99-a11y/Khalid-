@@ -8,20 +8,12 @@ import { getCompletedMemorizationDays } from "@/lib/plan-progress"
 import { insertNotificationsAndSendPush } from "@/lib/push-notifications"
 import { getOrCreateActiveSemester, isMissingSemestersTable, isNoActiveSemesterError } from "@/lib/semesters"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { isMissingExamPortionColumns } from "@/lib/table-checks"
 import { buildExamAppNotificationMessage, fillExamWhatsAppTemplate, getExamWhatsAppTemplates } from "@/lib/whatsapp-notification-templates"
 import { enqueueWhatsAppMessage } from "@/lib/whatsapp-queue"
+import { getErrorMessage } from "@/lib/errors"
 
 const ADVANCING_MEMORIZATION_LEVELS = ["excellent", "good", "very_good"]
-
-function getErrorMessage(error: unknown) {
-  if (!error) return "حدث خطأ غير معروف"
-  if (error instanceof Error) return error.message || "حدث خطأ غير معروف"
-  if (typeof error === "object") {
-    const candidate = error as { message?: string; details?: string; hint?: string; code?: string }
-    return candidate.message || candidate.details || candidate.hint || candidate.code || JSON.stringify(candidate)
-  }
-  return String(error)
-}
 
 function isMissingExamSchedulesTable(error: unknown) {
   if (!error || typeof error !== "object") {
@@ -37,10 +29,6 @@ function isMissingExamSchedulesTable(error: unknown) {
   )
 }
 
-function isMissingExamPortionColumns(error: unknown) {
-  const message = getErrorMessage(error)
-  return /portion_type|portion_number/i.test(message) && /column|does not exist|schema cache/i.test(message)
-}
 
 function hasCompletedMemorization(record: any) {
   const evaluations = Array.isArray(record.evaluations)

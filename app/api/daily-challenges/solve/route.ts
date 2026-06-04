@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { requireRoles } from "@/lib/auth/guards"
+import { getSaudiDateString } from "@/lib/saudi-time"
 import {
   DAILY_CHALLENGE_COOKIE_NAME,
   type DailyChallengeAttempt,
@@ -11,14 +12,6 @@ import {
   getDailyChallengeCookieOptions,
 } from "@/lib/auth/session"
 
-function getKsaDateString() {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Riyadh",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date())
-}
 
 function createAdminClient() {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -407,7 +400,7 @@ export async function GET(request: NextRequest) {
 
     const { session } = auth
     const supabase = createAdminClient()
-    const todayDate = getKsaDateString()
+    const todayDate = getSaudiDateString()
     const cookieAttempts = await getDailyChallengeAttemptsFromCookieHeader(request.headers.get("cookie"))
 
     const challenge = await ensureTodayChallenge(supabase, todayDate)
@@ -439,7 +432,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { challengeId, answer, isCorrect, action } = body
 
-    const todayDate = getKsaDateString()
+    const todayDate = getSaudiDateString()
     const cookieAttempts = await getDailyChallengeAttemptsFromCookieHeader(request.headers.get("cookie"))
 
     const challenge = await ensureTodayChallenge(supabase, todayDate, challengeId)

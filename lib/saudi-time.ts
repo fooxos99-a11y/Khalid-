@@ -66,6 +66,10 @@ export function formatSaudiTimeWithPeriod(timeValue: string) {
 	return formatHourMinuteWithPeriod(hour, minute)
 }
 
+export function formatDateForQuery(value: Date) {
+	return new Intl.DateTimeFormat("en-CA", { timeZone: RIYADH_TIME_ZONE }).format(value)
+}
+
 function formatHourMinuteWithPeriod(hour24: number, minute: number) {
 	const period = hour24 >= 12 ? "م" : "ص"
 	const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12

@@ -63,3 +63,17 @@ export function applyAttendancePointsAdjustment(totalPoints: number, status: str
   }
   return Math.max(0, totalPoints)
 }
+
+export function hasCompleteEvaluation(levels: {
+  hafiz_level?: string | null
+  tikrar_level?: string | null
+  samaa_level?: string | null
+  rabet_level?: string | null
+}) {
+  return !!(
+    levels.hafiz_level &&
+    levels.tikrar_level &&
+    levels.samaa_level &&
+    levels.rabet_level
+  )
+}

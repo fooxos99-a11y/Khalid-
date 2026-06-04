@@ -11,22 +11,13 @@ import {
 import { getSiteSetting } from "@/lib/site-settings"
 import { enqueueWhatsAppMessage } from "@/lib/whatsapp-queue"
 import { isWhatsAppWorkerReady, readWhatsAppWorkerStatus } from "@/lib/whatsapp-worker-status"
+import { getErrorMessage } from "@/lib/errors"
 import {
   DEFAULT_RECITATION_DAY_LIFECYCLE_NOTIFICATION_TEMPLATES,
   fillRecitationDayLifecycleTemplate,
   normalizeRecitationDayLifecycleNotificationTemplates,
   RECITATION_DAY_LIFECYCLE_NOTIFICATION_SETTINGS_ID,
 } from "@/lib/recitation-day-lifecycle-notification-templates"
-
-function getErrorMessage(error: unknown) {
-  if (!error) return "حدث خطأ غير معروف"
-  if (error instanceof Error) return error.message || "حدث خطأ غير معروف"
-  if (typeof error === "object") {
-    const candidate = error as { message?: string; details?: string; hint?: string; code?: string }
-    return candidate.message || candidate.details || candidate.hint || candidate.code || JSON.stringify(candidate)
-  }
-  return String(error)
-}
 
 type LifecycleRecipient = {
   student_id: string

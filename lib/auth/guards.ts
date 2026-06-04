@@ -3,10 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { hasPermissionAccess } from "@/lib/admin-permissions"
 import { DEFAULT_ADMIN_ROLE_SETTINGS, ROLES_SETTINGS_ID, normalizeAdminRoleSettings } from "@/lib/admin-role-settings"
 import { type AppRole, type SessionUser, getSessionFromCookieHeader } from "@/lib/auth/session"
-
-function normalizeHalaqah(value?: string | null) {
-  return String(value || "").trim().toLowerCase()
-}
+import { normalizeHalaqah } from "@/lib/normalize"
 
 export function isPrivilegedRole(role: AppRole) {
   return role === "admin" || role === "supervisor"

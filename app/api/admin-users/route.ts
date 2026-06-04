@@ -3,16 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdminPermission } from "@/lib/auth/guards"
 import { normalizeGuardianPhoneForStorage } from "@/lib/phone-number"
 import { normalizeDigitsToEnglish } from "@/lib/number-format"
-
-function getErrorMessage(error: unknown) {
-  if (!error) return "حدث خطأ غير معروف"
-  if (error instanceof Error) return error.message || "حدث خطأ غير معروف"
-  if (typeof error === "object") {
-    const candidate = error as { message?: string; details?: string; hint?: string; code?: string }
-    return candidate.message || candidate.details || candidate.hint || candidate.code || JSON.stringify(candidate)
-  }
-  return String(error)
-}
+import { getErrorMessage } from "@/lib/errors"
 
 function normalizePhoneNumber(phoneNumber: unknown) {
   if (phoneNumber === undefined) return undefined

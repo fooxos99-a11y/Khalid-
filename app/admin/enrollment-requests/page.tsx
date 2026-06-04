@@ -8,6 +8,7 @@ import { Copy, Check, Lock, Unlock, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getReadableErrorMessage } from "@/lib/errors";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -96,29 +97,6 @@ function formatMemorizedDisplay(amount?: string | null, selectedJuzs?: number[] 
   return formatEnrollmentMemorizedAmount(amount, selectedJuzs)
 }
 
-function getReadableErrorMessage(error: unknown) {
-  if (!error) return "حدث خطأ غير معروف";
-
-  if (typeof error === "string") return error;
-
-  if (error instanceof Error) {
-    return error.message || "حدث خطأ غير معروف";
-  }
-
-  if (typeof error === "object") {
-    const candidate = error as {
-      message?: string;
-      error?: string;
-      details?: string;
-      hint?: string;
-      code?: string;
-    };
-
-    return candidate.message || candidate.error || candidate.details || candidate.hint || candidate.code || JSON.stringify(candidate);
-  }
-
-  return String(error);
-}
 
 async function getResponsePayload(response: Response) {
   const rawText = await response.text();

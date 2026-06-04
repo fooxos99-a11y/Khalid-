@@ -7,6 +7,8 @@ import { getOrCreateActiveSemester, isMissingSemestersTable, isNoActiveSemesterE
 import { calculatePreviousMemorizedPages, resolvePlanReviewPagesForDate, resolvePlanReviewPoolPages } from "@/lib/quran-data"
 import { isPassingMemorizationLevel, type EvaluationLevelValue } from "@/lib/student-attendance"
 import { getStudyWeekStart, isStudyDay } from "@/lib/study-calendar"
+import { getReadableErrorMessage } from "@/lib/errors"
+import { formatDateForQuery } from "@/lib/saudi-time"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -87,10 +89,6 @@ function normalizeCircleName(value?: string | null) {
   return String(value || "").trim().toLowerCase()
 }
 
-function formatDateForQuery(value: Date) {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Riyadh" }).format(value)
-}
-
 function getStudyWeek(weekOffset: number) {
   const start = getStudyWeekStart()
   start.setDate(start.getDate() - weekOffset * 7)
@@ -134,34 +132,6 @@ function hasPassingTikrar(record?: AttendanceRow) {
   return isPassingMemorizationLevel(evaluation.tikrar_level ?? null)
 }
 
-function getReadableErrorMessage(error: unknown) {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message
-  }
-
-  if (typeof error === "string" && error.trim()) {
-    return error
-  }
-
-  if (error && typeof error === "object") {
-    const candidate = error as {
-      message?: unknown
-      error?: unknown
-      details?: unknown
-      hint?: unknown
-      code?: unknown
-    }
-
-    const parts = [candidate.message, candidate.error, candidate.details, candidate.hint, candidate.code]
-      .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
-
-    if (parts.length > 0) {
-      return parts.join(" - ")
-    }
-  }
-
-  return "حدث خطأ غير معروف أثناء تحميل البيانات"
-}
 
 function isMissingDailyReportsTable(error: unknown) {
   if (!error || typeof error !== "object") {

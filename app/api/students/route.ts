@@ -23,27 +23,8 @@ import {
 import { getOrCreateActiveSemester, isNoActiveSemesterError } from "@/lib/semesters"
 import { normalizeGuardianPhoneForStorage } from "@/lib/phone-number"
 import { normalizeDigitsToEnglish } from "@/lib/number-format"
-
-function getSupabaseErrorMessage(error: unknown) {
-  if (!error) return "حدث خطأ غير معروف";
-
-  if (error instanceof Error) {
-    return error.message || "حدث خطأ غير معروف";
-  }
-
-  if (typeof error === "object") {
-    const candidate = error as {
-      message?: string;
-      details?: string;
-      hint?: string;
-      code?: string;
-    };
-
-    return candidate.message || candidate.details || candidate.hint || candidate.code || JSON.stringify(candidate);
-  }
-
-  return String(error);
-}
+import { getErrorMessage } from "@/lib/errors"
+import { isMissingStudentExamsTable } from "@/lib/table-checks"
 
 function normalizeStudentMastery<T extends { current_juzs?: number[] | null; completed_juzs?: number[] | null }>(student: T): T {
   return {
@@ -52,10 +33,6 @@ function normalizeStudentMastery<T extends { current_juzs?: number[] | null; com
   }
 }
 
-function isMissingStudentExamsTable(error: unknown) {
-  const message = String((error as { message?: string } | null)?.message || error || "")
-  return /student_exams/i.test(message) && /does not exist|not exist|relation|table/i.test(message)
-}
 
 function isMissingResetStudentMemorizationFunction(error: unknown) {
   const message = String((error as { message?: string } | null)?.message || error || "")
@@ -354,7 +331,7 @@ export async function POST(request: Request) {
       console.error("[v0] Error adding student:", error)
       return NextResponse.json(
         {
-          error: getSupabaseErrorMessage(error),
+          error: getErrorMessage(error),
           source: "students.insert",
         },
         { status: 500 }
@@ -371,7 +348,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, student: studentWithCircleName }, { status: 201 })
   } catch (error) {
     console.error("[v0] Error in POST /api/students:", error)
-    return NextResponse.json({ error: getSupabaseErrorMessage(error) }, { status: 500 })
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
   }
 }
 
@@ -599,7 +576,7 @@ export async function PATCH(request: Request) {
           return NextResponse.json({ success: true, student: normalizeStudentMastery(fallbackData) }, { status: 200 })
         }
 
-        console.error("[students] Error resetting memorized range atomically:", getSupabaseErrorMessage(error))
+        console.error("[students] Error resetting memorized range atomically:", getErrorMessage(error))
         return NextResponse.json({ error: "فشل في إعادة ضبط محفوظ الطالب" }, { status: 500 })
       }
 
@@ -677,7 +654,7 @@ export async function PATCH(request: Request) {
           }, { status: 200 })
         }
 
-        console.error("[students] Error removing memorized range atomically:", getSupabaseErrorMessage(error))
+        console.error("[students] Error removing memorized range atomically:", getErrorMessage(error))
         return NextResponse.json({ error: "فشل في حذف الجزء المحدد من محفوظ الطالب" }, { status: 500 })
       }
 

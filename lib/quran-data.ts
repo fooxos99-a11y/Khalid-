@@ -2879,3 +2879,15 @@ export function getOffsetContent(
 
   return { text: formattedText };
 }
+
+export function resolveSurahNumber(value: unknown) {
+  const trimmedValue = String(value || "").trim()
+  if (!trimmedValue) return null
+
+  const numericValue = Number(trimmedValue)
+  if (Number.isInteger(numericValue) && numericValue >= 1 && numericValue <= 114) {
+    return numericValue
+  }
+
+  return SURAHS.find((surah) => surah.name === trimmedValue)?.number || null
+}

@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 import { isTeacherRole, requireRoles } from "@/lib/auth/guards"
 import { normalizeGuardianPhoneForStorage } from "@/lib/phone-number"
+import { getErrorMessage } from "@/lib/errors"
 
 type BulkStudentInput = {
   name?: string | null
@@ -31,7 +32,7 @@ function normalizeDigits(value: unknown) {
 }
 
 function formatBulkStudentInsertError(error: unknown) {
-  const message = getSupabaseErrorMessage(error)
+  const message = getErrorMessage(error)
 
   if (/account_number/i.test(message) && /duplicate|unique/i.test(message)) {
     return "رقم الحساب موجود بالفعل"
@@ -48,15 +49,6 @@ function formatBulkStudentInsertError(error: unknown) {
   return message
 }
 
-function getSupabaseErrorMessage(error: unknown) {
-  if (!error) return "حدث خطأ غير معروف"
-  if (error instanceof Error) return error.message || "حدث خطأ غير معروف"
-  if (typeof error === "object") {
-    const candidate = error as { message?: string; details?: string; hint?: string; code?: string }
-    return candidate.message || candidate.details || candidate.hint || candidate.code || JSON.stringify(candidate)
-  }
-  return String(error)
-}
 
 export async function POST(request: Request) {
   try {
@@ -254,6 +246,6 @@ export async function POST(request: Request) {
     )
   } catch (error) {
     console.error("[students/bulk] Error importing students:", error)
-    return NextResponse.json({ error: getSupabaseErrorMessage(error) }, { status: 500 })
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
   }
 }

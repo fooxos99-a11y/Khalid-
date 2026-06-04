@@ -8,6 +8,8 @@ import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { SiteLoader } from "@/components/ui/site-loader";
 import { getStudyWeekStart, isStudyDay } from "@/lib/study-calendar";
+import { getReadableErrorMessage } from "@/lib/errors";
+import { formatDateForQuery } from "@/lib/saudi-time"
 
 type DayStatus = "absent" | "late" | "present-only" | "memorized" | "review" | "tied" | "review-tied" | "complete" | "none";
 
@@ -54,10 +56,6 @@ const TEXT = {
   unknownStudent: "طالب غير معرف",
 };
 
-function formatDateForQuery(value: Date) {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Riyadh" }).format(value);
-}
-
 function getStudyWeekLabel(weekOffset: number) {
   if (weekOffset === 0) {
     return TEXT.currentWeek;
@@ -103,34 +101,6 @@ function formatRatio(completed: number, target: number) {
   return `${formatCount(completed)}/${formatCount(target)}`;
 }
 
-function getReadableErrorMessage(error: unknown) {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message;
-  }
-
-  if (typeof error === "string" && error.trim()) {
-    return error;
-  }
-
-  if (error && typeof error === "object") {
-    const candidate = error as {
-      message?: unknown;
-      error?: unknown;
-      details?: unknown;
-      hint?: unknown;
-      code?: unknown;
-    };
-
-    const parts = [candidate.message, candidate.error, candidate.details, candidate.hint, candidate.code]
-      .filter((value): value is string => typeof value === "string" && value.trim().length > 0);
-
-    if (parts.length > 0) {
-      return parts.join(" - ");
-    }
-  }
-
-  return "حدث خطأ غير معروف أثناء تحميل البيانات";
-}
 
 function getStatusColor(status: DayStatus) {
   switch (status) {
