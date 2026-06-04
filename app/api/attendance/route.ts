@@ -148,11 +148,15 @@ export async function GET(request: NextRequest) {
     // Fetch evaluations for each attendance record
     const recordsWithEvaluations = await Promise.all(
       (attendanceData || []).map(async (record) => {
-        const { data: evaluations } = await supabase
+        const { data: evaluations, error: evalError } = await supabase
           .from("evaluations")
           .select("*")
           .eq("attendance_record_id", record.id)
           .order("created_at", { ascending: true });
+
+        if (evalError) {
+          console.error("[attendance] Error fetching evaluations for record %s:", record.id, evalError)
+        }
 
         // اختر آخر تقييم (الأحدث)
         const lastEval = Array.isArray(evaluations) && evaluations.length > 0

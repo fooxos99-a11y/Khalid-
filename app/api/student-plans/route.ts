@@ -758,11 +758,16 @@ export async function GET(request: Request) {
         return studentAccess.response
       }
 
-      const { data: studentData } = await supabase
+      const { data: studentData, error: studentDataError } = await supabase
         .from("students")
         .select("completed_juzs, current_juzs, memorized_start_surah, memorized_start_verse, memorized_end_surah, memorized_end_verse, memorized_ranges")
         .eq("id", studentId)
         .maybeSingle()
+
+      if (studentDataError) {
+        console.error("[plans] Error fetching student data:", studentDataError)
+        return NextResponse.json({ error: "فشل في جلب بيانات الطالب" }, { status: 500 })
+      }
 
       const passedExamJuzsByStudentId = await getPassedExamJuzsByStudentIds(supabase, activeSemester.id, [studentId])
       const effectiveStudentData = mergePassedExamJuzsIntoSnapshot(studentData, passedExamJuzsByStudentId.get(studentId))
@@ -877,11 +882,16 @@ export async function POST(request: Request) {
         })
       : null
 
-    const { data: studentMemorizedData } = await supabase
+    const { data: studentMemorizedData, error: studentMemorizedError } = await supabase
       .from("students")
       .select("memorized_start_surah, memorized_start_verse, memorized_end_surah, memorized_end_verse, memorized_ranges, completed_juzs, current_juzs")
       .eq("id", student_id)
       .maybeSingle()
+
+    if (studentMemorizedError) {
+      console.error("[plans] Error fetching student memorized data:", studentMemorizedError)
+      return NextResponse.json({ error: "فشل في جلب بيانات حفظ الطالب" }, { status: 500 })
+    }
 
     const normalizedCompletedJuzs = getNormalizedCompletedJuzs(studentMemorizedData?.completed_juzs)
     const pendingMasteryJuzs = getPendingMasteryJuzs(studentMemorizedData?.current_juzs, normalizedCompletedJuzs)

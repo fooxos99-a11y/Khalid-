@@ -39,13 +39,18 @@ export async function GET(request: Request) {
     }
 
     // 1. Get the current active plan
-    const { data: plans } = await supabase
+    const { data: plans, error: plansError } = await supabase
       .from("student_plans")
       .select("*")
       .eq("student_id", studentId)
       .eq("semester_id", activeSemester.id)
       .order("created_at", { ascending: false })
       .limit(1)
+
+    if (plansError) {
+      console.error("[compensation/missed] Error fetching plans:", plansError)
+      return NextResponse.json({ error: "فشل في جلب خطة الطالب" }, { status: 500 })
+    }
 
     if (!plans || plans.length === 0 || !plans[0].start_date) {
       return NextResponse.json({ missedDays: [] }) // No active plan
@@ -64,7 +69,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ missedDays: [] }) // Plan starts in the future or started today
     }
 
-    const { data: attendanceRecords } = await supabase
+    const { data: attendanceRecords, error: attendanceError } = await supabase
       .from("attendance_records")
       .select("id, date, status, is_compensation, created_at, evaluations(hafiz_level)")
       .eq("student_id", studentId)
@@ -72,6 +77,11 @@ export async function GET(request: Request) {
       .gte("date", plan.start_date)
       .lte("date", todayStr)
       .order("date", { ascending: true })
+
+    if (attendanceError) {
+      console.error("[compensation/missed] Error fetching attendance:", attendanceError)
+      return NextResponse.json({ error: "فشل في جلب سجلات الحضور" }, { status: 500 })
+    }
 
     const ADVANCING_LEVELS = ["excellent", "good", "very_good"]
 

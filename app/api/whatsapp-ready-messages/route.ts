@@ -19,6 +19,7 @@ export async function GET(request: Request) {
     if (error) throw error
     return NextResponse.json({ messages: data || [] })
   } catch (error) {
+    console.error("[whatsapp-ready-messages] GET error:", error)
     return NextResponse.json({ error: "فشل في جلب الرسائل الجاهزة" }, { status: 500 })
   }
 }
@@ -39,6 +40,7 @@ export async function POST(request: Request) {
     if (error) throw error
     return NextResponse.json({ message: data })
   } catch (error) {
+    console.error("[whatsapp-ready-messages] POST error:", error)
     return NextResponse.json({ error: "فشل في إضافة الرسالة الجاهزة" }, { status: 500 })
   }
 }
@@ -58,6 +60,7 @@ export async function DELETE(request: Request) {
     if (error) throw error
     return NextResponse.json({ success: true })
   } catch (error) {
+    console.error("[whatsapp-ready-messages] DELETE error:", error)
     return NextResponse.json({ error: "فشل في حذف الرسالة الجاهزة" }, { status: 500 })
   }
 }
