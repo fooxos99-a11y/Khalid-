@@ -7,7 +7,10 @@
     "dev": "next dev --webpack",
     "lint": "eslint .",
     "start": "next start",
-    "worker:whatsapp": "node whatsapp-worker/index.js"
+    "worker:whatsapp": "node whatsapp-worker/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -85,8 +88,10 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.8",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.8"
   }
 }
